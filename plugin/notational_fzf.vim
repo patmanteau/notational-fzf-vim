@@ -90,7 +90,6 @@ else
 endif
 
 let s:search_path_str = join(map(copy(s:search_paths), 'shellescape(v:val)'))
-
 "=========================== Keymap ========================================
 
 let s:create_note_key = get(g:, 'nv_create_note_key', 'ctrl-x')
@@ -153,6 +152,37 @@ endfunction
 
 let s:nv_ignore_pattern = exists('g:nv_ignore_pattern') ? s:ignore_list_to_str(g:nv_ignore_pattern) : ''
 
+"============================== Create new note  ===========================
+function! s:is_buffer_empty()
+    return getline(1) ==# '' && 1 == line('$')
+endfunction
+
+function! s:create_new_note(query)
+    let uid = strftime('%Y%m%d%H%M')
+    let path = fnameescape(s:main_dir . '/' . uid . ' ' . a:query . s:ext)
+    let cmd = join([':edit', path])
+    echo cmd
+    execute cmd
+
+    let timestamp = strftime('%Y-%m-%d %H:%M:%S')
+
+    if s:is_buffer_empty()
+      echo('buffer is empty')
+      call append(line('^'), [
+                  \'---',
+                  \join(['note-id:', uid]),
+                  \join(['title:', a:query]),
+                  \'author: Patrick Haas',
+                  \join(['timestamp:', timestamp]),
+                  \'tags: ',
+                  \'---',
+                  \'',
+                  \join(['#', a:query]),
+                  \])
+    endif
+endfunction
+
+
 "============================== Handler Function ===========================
 
 function! s:handler(lines) abort
@@ -171,7 +201,8 @@ function! s:handler(lines) abort
 
    " Handle creating note.
    if keypress ==? s:create_note_key
-     let candidates = [fnameescape(s:main_dir  . '/' . query . s:ext)]
+     "let candidates = [fnameescape(s:main_dir  . '/' . query . s:ext)]
+     return s:create_new_note(query)
    elseif keypress ==? s:yank_key
      let pat = '\v(.{-}):\d+:'
      let hashes = join(filter(map(copy(a:lines[2:]), 'matchlist(v:val, pat)[1]'), 'len(v:val)'), s:yank_separator)
@@ -205,6 +236,7 @@ endfunction
 " Use `command` in front of 'rg' to ignore aliases.
 " The `' "\S" '` is so that the backslash itself doesn't require escaping.
 " g:search_paths is already shell escaped, so we don't do it again
+command! NVargs echo s:format_path_expr
 command! -nargs=* -bang NV
       \ call fzf#run(
           \ fzf#wrap({
