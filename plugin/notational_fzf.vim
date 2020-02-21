@@ -59,6 +59,9 @@ let s:search_paths = map(copy(g:nv_search_paths), 'expand(v:val)')
 " Separator for yanked files
 let s:yank_separator = get(g:, 'nv_yank_separator', "\n")
 
+" Author name
+let s:author_name = get (g:, 'nv_author_name', '')
+
 "=========================== Windows Overrides ============================
 
 if has('win64') || has('win32')
@@ -172,7 +175,7 @@ function! s:create_new_note(query)
                   \'---',
                   \join(['note-id:', uid]),
                   \join(['title:', a:query]),
-                  \'author: Patrick Haas',
+                  \join(['author:', s:author_name]),
                   \join(['timestamp:', timestamp]),
                   \'tags: ',
                   \'---',
